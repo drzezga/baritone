@@ -26,8 +26,8 @@ import baritone.pathing.movement.MovementHelper;
 import baritone.pathing.movement.MovementState;
 import com.google.common.collect.ImmutableSet;
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.init.Blocks;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 
 import java.util.Set;
 
@@ -62,7 +62,7 @@ public class MovementDownward extends Movement {
         if (!MovementHelper.canWalkOn(context.bsi, x, y - 2, z)) {
             return COST_INF;
         }
-        IBlockState down = context.get(x, y - 1, z);
+        BlockState down = context.get(x, y - 1, z);
         Block downBlock = down.getBlock();
         if (downBlock == Blocks.LADDER || downBlock == Blocks.VINE) {
             return LADDER_DOWN_ONE_COST;

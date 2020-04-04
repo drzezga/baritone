@@ -17,26 +17,32 @@
 
 package baritone.launch.mixins;
 
-import baritone.utils.accessor.IChunkProviderServer;
-import net.minecraft.world.chunk.storage.IChunkLoader;
-import net.minecraft.world.gen.ChunkProviderServer;
-import org.spongepowered.asm.mixin.Final;
+import baritone.utils.accessor.IEntityRenderManager;
+import net.minecraft.client.renderer.entity.EntityRendererManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-/**
- * @author Brady
- * @since 9/4/2018
- */
-@Mixin(ChunkProviderServer.class)
-public class MixinChunkProviderServer implements IChunkProviderServer {
-
+@Mixin(EntityRendererManager.class)
+public class MixinEntityRenderManager implements IEntityRenderManager {
     @Shadow
-    @Final
-    private IChunkLoader chunkLoader;
+    private double renderPosX;
+    @Shadow
+    private double renderPosY;
+    @Shadow
+    private double renderPosZ;
 
     @Override
-    public IChunkLoader getChunkLoader() {
-        return this.chunkLoader;
+    public double renderPosX() {
+        return renderPosX;
+    }
+
+    @Override
+    public double renderPosY() {
+        return renderPosY;
+    }
+
+    @Override
+    public double renderPosZ() {
+        return renderPosZ;
     }
 }

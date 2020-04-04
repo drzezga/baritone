@@ -15,15 +15,12 @@
  * along with Baritone.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package baritone.gradle.util;
+package baritone.utils.accessor;
 
-/**
- * All credits go to AsmLibGradle and its contributors.
- *
- * @see <a href="https://github.com/pozzed/AsmLibGradle/blob/8f917dbc3939eab7a3d9daf54d9d285fdf34f4b2/src/main/java/net/futureclient/asmlib/forgegradle/MappingType.java">Original Source</a>
- */
-public enum MappingType {
-    SEARGE,
-    NOTCH,
-    CUSTOM // forgegradle
+import net.minecraft.client.multiplayer.ClientChunkProvider;
+
+public interface IClientChunkProvider {
+    ClientChunkProvider createThreadSafeCopy();
+
+    IChunkArray extractReferenceArray();
 }

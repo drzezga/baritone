@@ -19,7 +19,7 @@ package baritone.launch.mixins;
 
 import baritone.utils.accessor.IBitArray;
 import baritone.utils.accessor.IBlockStateContainer;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
 import net.minecraft.util.BitArray;
 import net.minecraft.world.chunk.BlockStateContainer;
 import net.minecraft.world.chunk.IBlockStatePalette;
@@ -33,11 +33,11 @@ public abstract class MixinBlockStateContainer implements IBlockStateContainer {
     protected BitArray storage;
 
     @Shadow
-    protected IBlockStatePalette palette;
+    protected IBlockStatePalette<BlockState> palette;
 
     @Override
-    public IBlockState getAtPalette(int index) {
-        return palette.getBlockState(index);
+    public BlockState getAtPalette(int index) {
+        return palette.get(index);
     }
 
     @Override

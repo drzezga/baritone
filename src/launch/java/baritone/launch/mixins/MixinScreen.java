@@ -17,27 +17,17 @@
 
 package baritone.launch.mixins;
 
-import baritone.utils.accessor.IAnvilChunkLoader;
-import net.minecraft.world.chunk.storage.AnvilChunkLoader;
-import org.spongepowered.asm.mixin.Final;
+import baritone.utils.accessor.IGuiScreen;
+import net.minecraft.client.gui.screen.Screen;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.gen.Invoker;
 
-import java.io.File;
+import java.net.URI;
 
-/**
- * @author Brady
- * @since 9/4/2018
- */
-@Mixin(AnvilChunkLoader.class)
-public class MixinAnvilChunkLoader implements IAnvilChunkLoader {
-
-    @Shadow
-    @Final
-    private File chunkSaveLocation;
+@Mixin(Screen.class)
+public abstract class MixinScreen implements IGuiScreen {
 
     @Override
-    public File getChunkSaveLocation() {
-        return this.chunkSaveLocation;
-    }
+    @Invoker("openLink")
+    public abstract void openLinkInvoker(URI url);
 }

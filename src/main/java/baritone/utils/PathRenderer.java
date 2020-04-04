@@ -26,15 +26,17 @@ import baritone.api.utils.Helper;
 import baritone.api.utils.interfaces.IGoalRenderPos;
 import baritone.behavior.PathingBehavior;
 import baritone.pathing.path.PathExecutor;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.tileentity.TileEntityBeaconRenderer;
+import com.mojang.blaze3d.platform.GlStateManager;
+import net.minecraft.block.BlockState;
+import net.minecraft.client.renderer.tileentity.BeaconTileEntityRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
-import net.minecraft.init.Blocks;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.shapes.VoxelShape;
+import net.minecraft.util.math.shapes.VoxelShapes;
 
 import java.awt.*;
 import java.util.Collection;
@@ -47,9 +49,24 @@ import static org.lwjgl.opengl.GL11.*;
  * @author Brady
  * @since 8/9/2018
  */
-public final class PathRenderer implements IRenderer {
+public final class PathRenderer implements IRenderer, Helper {
+
+    private static final ResourceLocation TEXTURE_BEACON_BEAM = new ResourceLocation("textures/entity/beacon_beam.png");
+
 
     private PathRenderer() {}
+
+    public static double posX() {
+        return renderManager.renderPosX();
+    }
+
+    public static double posY() {
+        return renderManager.renderPosY();
+    }
+
+    public static double posZ() {
+        return renderManager.renderPosZ();
+    }
 
     public static void render(RenderEvent event, PathingBehavior behavior) {
         float partialTicks = event.getPartialTicks();
@@ -58,8 +75,8 @@ public final class PathRenderer implements IRenderer {
             ((GuiClick) Helper.mc.currentScreen).onRender();
         }
 
-        int thisPlayerDimension = behavior.baritone.getPlayerContext().world().provider.getDimensionType().getId();
-        int currentRenderViewDimension = BaritoneAPI.getProvider().getPrimaryBaritone().getPlayerContext().world().provider.getDimensionType().getId();
+        int thisPlayerDimension = behavior.baritone.getPlayerContext().world().getDimension().getType().getId();
+        int currentRenderViewDimension = BaritoneAPI.getProvider().getPrimaryBaritone().getPlayerContext().world().getDimension().getType().getId();
 
         if (thisPlayerDimension != currentRenderViewDimension) {
             // this is a path for a bot in a different dimension, don't render it
@@ -149,7 +166,6 @@ public final class PathRenderer implements IRenderer {
                     }
                     alpha = 0.4F * (1.0F - (float) (i - fadeStart) / (float) (fadeEnd - fadeStart));
                 }
-
                 IRenderer.glColor(color, alpha);
             }
 
@@ -161,10 +177,11 @@ public final class PathRenderer implements IRenderer {
         IRenderer.endLines(settings.renderPathIgnoreDepth.value);
     }
 
+
     public static void drawLine(double x1, double y1, double z1, double x2, double y2, double z2) {
-        double vpX = renderManager.viewerPosX;
-        double vpY = renderManager.viewerPosY;
-        double vpZ = renderManager.viewerPosZ;
+        double vpX = posX();
+        double vpY = posY();
+        double vpZ = posZ();
         boolean renderPathAsFrickinThingy = !settings.renderPathAsLine.value;
 
         buffer.begin(renderPathAsFrickinThingy ? GL_LINE_STRIP : GL_LINES, DefaultVertexFormats.POSITION);
@@ -185,15 +202,10 @@ public final class PathRenderer implements IRenderer {
         BlockStateInterface bsi = new BlockStateInterface(BaritoneAPI.getProvider().getPrimaryBaritone().getPlayerContext()); // TODO this assumes same dimension between primary baritone and render view? is this safe?
 
         positions.forEach(pos -> {
-            IBlockState state = bsi.get0(pos);
-            AxisAlignedBB toDraw;
-
-            if (state.getBlock().equals(Blocks.AIR)) {
-                toDraw = Blocks.DIRT.getDefaultState().getSelectedBoundingBox(player.world, pos);
-            } else {
-                toDraw = state.getSelectedBoundingBox(player.world, pos);
-            }
-
+            BlockState state = bsi.get0(pos);
+            VoxelShape shape = state.getShape(player.world, pos);
+            AxisAlignedBB toDraw = shape.isEmpty() ? VoxelShapes.fullCube().getBoundingBox() : shape.getBoundingBox();
+            toDraw = toDraw.offset(pos);
             IRenderer.drawAABB(toDraw, .002D);
         });
 
@@ -201,9 +213,9 @@ public final class PathRenderer implements IRenderer {
     }
 
     public static void drawDankLitGoalBox(Entity player, Goal goal, float partialTicks, Color color) {
-        double renderPosX = renderManager.viewerPosX;
-        double renderPosY = renderManager.viewerPosY;
-        double renderPosZ = renderManager.viewerPosZ;
+        double renderPosX = posX();
+        double renderPosY = posY();
+        double renderPosZ = posZ();
         double minX, maxX;
         double minZ, maxZ;
         double minY, maxY;
@@ -233,26 +245,29 @@ public final class PathRenderer implements IRenderer {
             if (settings.renderGoalXZBeacon.value) {
                 glPushAttrib(GL_LIGHTING_BIT);
 
-                Helper.mc.getTextureManager().bindTexture(TileEntityBeaconRenderer.TEXTURE_BEACON_BEAM);
-
+                Helper.mc.getTextureManager().bindTexture(TEXTURE_BEACON_BEAM);
                 if (settings.renderGoalIgnoreDepth.value) {
-                    GlStateManager.disableDepth();
+                    GlStateManager.disableDepthTest();
                 }
 
-                TileEntityBeaconRenderer.renderBeamSegment(
+                BeaconTileEntityRenderer.renderBeamSegment(
                         goalPos.getX() - renderPosX,
                         -renderPosY,
                         goalPos.getZ() - renderPosZ,
                         partialTicks,
                         1.0,
-                        player.world.getTotalWorldTime(),
+                        player.world.getGameTime(),
                         0,
                         256,
-                        color.getColorComponents(null)
+                        color.getColorComponents(null),
+
+                        // Arguments filled by the private method lol
+                        0.2D,
+                        0.25D
                 );
 
                 if (settings.renderGoalIgnoreDepth.value) {
-                    GlStateManager.enableDepth();
+                    GlStateManager.enableDepthTest();
                 }
 
                 glPopAttrib();
@@ -294,6 +309,7 @@ public final class PathRenderer implements IRenderer {
 
         renderHorizontalQuad(minX, maxX, minZ, maxZ, y1);
         renderHorizontalQuad(minX, maxX, minZ, maxZ, y2);
+
 
         buffer.begin(GL_LINES, DefaultVertexFormats.POSITION);
         buffer.pos(minX, minY, minZ).endVertex();
